@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf8');
+include "upload.php";
 
 class menu 
 {
@@ -87,13 +88,13 @@ class menu
 		$this->form='<form class="pure-form pure-form-stacked" action="main.php?menu_op=add" method="post"><fieldset>';
 		for($i=0;$i<count($col_names)-1;++$i){
 			if ($col_names[$i]=="TAG"){
-				$this->form=$this->form.$col_names[$i].'<br><input type=text name='.$col_names[$i].'_add value="N/A"><br>';
+				$this->form.=$col_names[$i].'<br><input type=text name='.$col_names[$i].'_add value="N/A"><br>';
 			}
 			else {
-				$this->form=$this->form.$col_names[$i].'<br><input type=text name='.$col_names[$i].'_add><br>';
+				$this->form.=$col_names[$i].'<br><input type=text name='.$col_names[$i].'_add><br>';
 			}
 		}
-		$this->form=$this->form."<P><INPUT TYPE=submit name='new_prod' VALUE='新增產品'></p></form>";
+		$this->form.="<P><INPUT TYPE=submit name='new_prod' VALUE='新增產品'></p></form>";
 	}
 
 	function addentry($add_values){
@@ -109,14 +110,11 @@ class menu
 		$sqlcmd='INSERT into product values(';
 			array_shift($add_values);    
 			for($i=0;$i<count($col_names)-1;++$i){
-				$sqlcmd=$sqlcmd."'".addslashes(array_shift($add_values))."',";
+				$sqlcmd.="'".addslashes(array_shift($add_values))."',";
 			}
-			$sqlcmd=$sqlcmd."DEFAULT)";
+			$sqlcmd.="DEFAULT)";
 $db=$sql->prepare($sqlcmd);
 $db->execute();
-//if(!mysqli_query($mysqli,$command)){
-//	$this->message="<font color='red'>指令未完成 ID不可重複</font>";
-//} 
 }
 
 function modentry_form(){
@@ -134,14 +132,11 @@ function modentry_form2($id){
 	$db=$sql->prepare($sqlcmd);
 	$db->execute();
 	$data=$db->fetch(PDO::FETCH_ASSOC);
-	//if(!$data=mysqli_fetch_row(mysqli_query($mysqli,$command))){echo "<br>filter error<br>";}
-	
-	//$mysqli->close();
 	$this->form="<form method='post' action='main.php?menu_op=mod2&id_mod=".$id["mod_id"]."'>";
 	for($i=0;$i<count($col_names)-1;++$i){
-		$this->form=$this->form."(新)".$col_names[$i].'<br><input type=text name='.$col_names[$i].'_moded value="'.htmlspecialchars(array_shift($data),ENT_COMPAT,'UTF-8',FALSE).'"><br>';
+		$this->form.="(新)".$col_names[$i].'<br><input type=text name='.$col_names[$i].'_moded value="'.htmlspecialchars(array_shift($data),ENT_COMPAT,'UTF-8',FALSE).'"><br>';
 	}
-	$this->form=$this->form."<P><INPUT TYPE=submit name='mod_prod' VALUE='修改產品'></p></form>";
+	$this->form.="<P><INPUT TYPE=submit name='mod_prod' VALUE='修改產品'></p></form>";
 }
 
 function modentry($id,$moded_values){
@@ -150,18 +145,12 @@ function modentry($id,$moded_values){
 	$sqlcmd='UPDATE product SET ';
 
 	for($i=0;$i<count($col_names)-1;++$i){
-		$sqlcmd=$sqlcmd.$col_names[$i]." = '".addslashes(array_shift($moded_values))."',";
+		$sqlcmd.=$col_names[$i]." = '".addslashes(array_shift($moded_values))."',";
 	}
-	$sqlcmd=rtrim($sqlcmd,',');
-	$sqlcmd=$sqlcmd." WHERE ID = '".addslashes($id)."'";
+	//$sqlcmd=rtrim($sqlcmd,',');
+	$sqlcmd.="`last updated`=now() WHERE ID = '".addslashes($id)."'";
 	$db=$sql->prepare($sqlcmd);
-	$db->execute();
-	
-//	if (!mysqli_query($mysqli,$command)){
-//		printf("Errorcode: %d\n", $mysqli->errno);
-//		exit();
-//	}
-	//$mysqli->close();    
+	$db->execute();  
 	$this->message="產品： <font color='blue'>{$id}</font> 已修改";
 }
 
@@ -180,9 +169,6 @@ function delentry($id){
 	$db=$sql->prepare($sqlcmd);
 	$db->execute();
 	$this->message="產品： <font color = '#0000FF' >{$id}</font> 已刪除";
-//	if(mysqli_query($mysqli,"DELETE FROM `product` WHERE `ID` = '$id'")){$this->message="產品： <font color = '#0000FF' >{$id}</font> 已刪除";}
-//	else { $this->message="指令未完成";}
-//	$mysqli->close();
 }
 
 function filter_form(){
@@ -191,15 +177,11 @@ function filter_form(){
 		$sqlcmd="SHOW columns from product";
 		$db=$sql->prepare($sqlcmd);
 		$col_list=get_column_name();
-//		var_dump($col_list);
-		//$col_list=mysqli_query ($mysqli,'SHOW columns from product');
-		//while($a=mysqli_fetch_row($col_list)){
+
 		foreach($col_list as $a){
-	//		var_dump($a);
 			if ($a!="last updated"){$col_name=$col_name.'<option value="'.$a.'">'.$a.'</option>';}
 		}
-	//	var_dump($col_name);
-	//	$mysqli->close();
+
 		$this->form="
 		<form method='post' action='main.php?menu_op=filter'>
 		<select name='col_name'>".$col_name."        
@@ -225,56 +207,65 @@ function filter_form(){
 	function create_profile($id){
 		Global $DB_display;
     $sql=connectDB();
-  //  $form="";
 //update memo and tag
     if (isset($_REQUEST['memo'])) {
-        //parse into HTML with special chars
         $memo_parsed = $sql->quote($_REQUEST['memo']);
         $tag_parsed = $sql->quote($_REQUEST['tag']);
-      //  $tag_parsed= mysqli_real_escape_string($sql, $_REQUEST['tag']);
     	$sqlcmd="UPDATE product SET MEMO= $memo_parsed , TAG=$tag_parsed WHERE ID='{$id}'";
     	$db=$sql->prepare($sqlcmd);
     	$db->execute();
-      // mysqli_query($sql,"UPDATE product SET MEMO='{$memo_parsed}' , TAG='{$tag_parsed}' WHERE ID='{$id}'");
-    }
 
+    }
+//upload pic
+    if (count($_FILES)!=0) {
+		$sqlcmd="SELECT PIC FROM product WHERE ID='{$id}'";
+	    $db=$sql->prepare($sqlcmd);
+	    $db->execute();
+	    $pic_num=$db->fetch(PDO::FETCH_ASSOC)["PIC"]+1;
+	    $pic_name="{$id}_{$pic_num}";
+	    $upload_dir="{$id}\\";
+    	picupload($pic_name,$upload_dir);
+    	$sqlcmd="UPDATE product SET PIC = {$pic_num},`last updated`=now() WHERE ID='{$id}'";
+    	$db=$sql->prepare($sqlcmd);
+	    $db->execute();
+    };
 
 //load pic
     $sqlcmd="SELECT pic FROM product WHERE ID='{$id}'";
     $db=$sql->prepare($sqlcmd);
     $db->execute();
     $pic_num=$db->fetch(PDO::FETCH_ASSOC);
-    for($i=1;$i<$pic_num['pic']+1;++$i){
-        $this->form=$this->form."<img src='{$id}\\{$id}_{$i}.jpg' WIDTH='25%'>";
+    for($i=1;$i<=$pic_num['pic'];++$i){
+        $this->form.="<img src='{$id}\\{$id}_{$i}.jpg' WIDTH='25%'>";
     }
 //load tag
     $sqlcmd="SELECT TAG FROM product WHERE ID='{$id}'";
     $db=$sql->prepare($sqlcmd);
     $db->execute();
-    $tag=$db->fetch(PDO::FETCH_ASSOC);
-  //  var_dump($tag);
-    //$tag=mysqli_fetch_row(mysqli_query($db,"SELECT TAG FROM product WHERE ID='{$id}'"));
-    
- //   var_dump(mysqli_fetch_row(mysqli_query($db,"SELECT TAG FROM product WHERE ID='{$id}'")));
-    if($tag['TAG']!="N/A"){
-        $this->form=$this->form."<img src='{$id}\\{$id}_tag.jpg' WIDTH='15%'style='float:right'>";
+    $tag=$db->fetch(PDO::FETCH_ASSOC)["TAG"];
+
+    if($tag!="N/A"){
+        $this->form.="<img src='{$id}\\{$id}_tag.jpg' WIDTH='15%'style='float:right'>";
     }   
 
-   //$memo=mysqli_fetch_row(mysqli_query($db,"SELECT MEMO FROM product WHERE ID='$id'"));
+ 
     $sqlcmd="SELECT MEMO FROM product WHERE ID='{$id}'";
     $db=$sql->prepare($sqlcmd);
     $db->execute();
-    $memo=$db->fetch(PDO::FETCH_ASSOC);
-   // $tag=mysqli_fetch_row(mysqli_query($db,"SELECT TAG FROM product WHERE ID='$id'"));
-   // $db->close();
+    $memo=$db->fetch(PDO::FETCH_ASSOC)["MEMO"];
+ 
     $DB_display=$this->filter("ID","=",$id);
-    $this->form=$this->form."<form method='post' action='main.php?ID={$id}'><pre>MEMO                                      TAG</pre>
-    <textarea style='height: 20%; resize: none; width: 30%;' name=memo rows=10 cols=30 resize:none style='position:relative'>{$memo['MEMO']}</textarea>
-    <textarea style='height: 20%; resize: none; width: 30%;' name=tag rows=10 cols=30 resize:none>{$tag['TAG']}</textarea><br>
+    $this->form.="<form method='post' action='main.php?ID={$id}'><pre>MEMO                                      TAG</pre>
+    <textarea style='height: 20%; resize: none; width: 30%;' name=memo rows=10 cols=30 resize:none style='position:relative'>{$memo}</textarea>
+    <textarea style='height: 20%; resize: none; width: 30%;' name=tag rows=10 cols=30 resize:none>{$tag}</textarea><br>
     <INPUT TYPE=submit name='update_memo' VALUE='更新MEMO&TAG'></p>
     </form>";
-   // var_dump($this->form);
+    $this->form.="<form enctype='multipart/form-data' action='main.php?ID={$id}' method='POST'>
+    上傳圖檔: <input name='uploadpic' type='file' /><input type='submit' value='上傳' />
+    </form>";
 
+	
+//	    var_dump($pic_name);
 }
 }
 ?>
