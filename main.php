@@ -57,7 +57,6 @@ function make_page($menu,$form,$DBcontent,$message) {
     
     return $page;
 }
-
 echo make_page($menu->display_menu(),$menu->form,DB_content($DB_display),$menu->message);
 
 
